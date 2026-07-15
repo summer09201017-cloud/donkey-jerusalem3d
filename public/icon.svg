@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- 騎驢進耶路撒冷:小驢駒側影+棕枝葉,深藍底(簡潔) -->
+  <defs>
+    <linearGradient id="bg" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#0d1f2b" />
+      <stop offset="100%" stop-color="#153d56" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)" />
+  <!-- 棕枝(左側,綠) -->
+  <g stroke="#4fae5a" stroke-width="12" stroke-linecap="round" fill="none">
+    <path d="M92 420 L146 300" />
+    <path d="M146 300 Q114 262 82 250" />
+    <path d="M146 300 Q142 248 120 214" />
+    <path d="M146 300 Q172 246 184 214" />
+    <path d="M146 300 Q186 278 216 272" />
+  </g>
+  <!-- 小驢駒側影(灰褐,面向右) -->
+  <g fill="#cbbba6">
+    <path d="M166 268 Q136 300 150 342" stroke="#cbbba6" stroke-width="13" fill="none" stroke-linecap="round" />
+    <rect x="160" y="248" width="192" height="98" rx="44" />
+    <rect x="184" y="318" width="27" height="94" rx="11" />
+    <rect x="234" y="324" width="27" height="90" rx="11" />
+    <rect x="284" y="324" width="27" height="90" rx="11" />
+    <rect x="322" y="318" width="27" height="94" rx="11" />
+    <path d="M336 278 L372 200 L412 212 L402 290 Z" />
+    <rect x="366" y="176" width="94" height="54" rx="26" />
+    <ellipse cx="382" cy="142" rx="13" ry="40" transform="rotate(-18 382 142)" />
+    <ellipse cx="414" cy="140" rx="13" ry="40" transform="rotate(14 414 140)" />
+  </g>
+  <!-- 背上鋪的紅褐衣服(太21:7) -->
+  <rect x="216" y="232" width="96" height="32" rx="10" fill="#8a3b28" />
+  <!-- 眼睛 -->
+  <circle cx="438" cy="198" r="7" fill="#1b2733" />
+</svg>

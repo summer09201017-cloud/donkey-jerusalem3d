@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- maskable 版:滿版底+內容縮進安全區(80%) -->
+  <defs>
+    <linearGradient id="mask-bg" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#09131d" />
+      <stop offset="100%" stop-color="#13334b" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#mask-bg)" />
+  <g transform="translate(256 256) scale(0.78) translate(-256 -256)">
+    <g stroke="#4fae5a" stroke-width="12" stroke-linecap="round" fill="none">
+      <path d="M92 420 L146 300" />
+      <path d="M146 300 Q114 262 82 250" />
+      <path d="M146 300 Q142 248 120 214" />
+      <path d="M146 300 Q172 246 184 214" />
+      <path d="M146 300 Q186 278 216 272" />
+    </g>
+    <g fill="#cbbba6">
+      <path d="M166 268 Q136 300 150 342" stroke="#cbbba6" stroke-width="13" fill="none" stroke-linecap="round" />
+      <rect x="160" y="248" width="192" height="98" rx="44" />
+      <rect x="184" y="318" width="27" height="94" rx="11" />
+      <rect x="234" y="324" width="27" height="90" rx="11" />
+      <rect x="284" y="324" width="27" height="90" rx="11" />
+      <rect x="322" y="318" width="27" height="94" rx="11" />
+      <path d="M336 278 L372 200 L412 212 L402 290 Z" />
+      <rect x="366" y="176" width="94" height="54" rx="26" />
+      <ellipse cx="382" cy="142" rx="13" ry="40" transform="rotate(-18 382 142)" />
+      <ellipse cx="414" cy="140" rx="13" ry="40" transform="rotate(14 414 140)" />
+    </g>
+    <rect x="216" y="232" width="96" height="32" rx="10" fill="#8a3b28" />
+    <circle cx="438" cy="198" r="7" fill="#1b2733" />
+  </g>
+</svg>
