@@ -215,15 +215,161 @@ function makePerson({ shirt = 0x2f6f4e, pants = 0x2a3550, skin = 0xf3cca6, hair 
   return { group, rig, head, waist, leftArm, rightArm, leftLeg, rightLeg, smile };
 }
 
+/* ══════════════════════════════════════════════════════════════════════════════
+   🧸 tsum 圓萌人偶(2026-07-30 使用者點名:「把耶穌/巴蘭也做圓萌版(也做成年齡分級的可選項)」)
+   ★ 全艦隊畫風政策=**動物一律 tsum、人物按年齡分級** ⇒ 人物不是開關而是**三態**
+     (auto 依年齡 / tsum / real),見 storage.js 的 riderStyle 與下面的 resolveRiderTsum()。
+   ★★ **神學界線(使用者在尋羊記親自定的,這裡更嚴格)**:圓萌版**刻意不加腮紅**。
+      尋羊記的牧人代表主耶穌,使用者當時的話是「可愛可以、做成玩偶就過頭」;
+      本站的騎者**就是主耶穌本人**,所以腮紅一律關掉(`blush: false`),
+      白袍+深紅披肩+及肩褐髮這些辨識衣著全部保留。巴蘭站不受這條限制(他是先知、不是主)。
+   ★ 接口與 makePerson **完全一樣**:{ group, rig, head, waist, leftArm, rightArm, leftLeg, rightLeg, smile }
+     —— poseJesusOnDonkey() 直接在寫 leftLeg.pivot.rotation / rightArm.joint.rotation 這些路徑,
+     少一個鍵就整個坐姿壞掉。
+   ★ **所有 y 值與原版一字不差**(chest 1.42 / waist 1.16 / head 2.12 / 手 1.72 / 腿 1.0):
+     騎者的 group 位置是相對鞍座算的,骨架一挪就浮空或陷進驢背。
+     圓萌只改「積木形狀 + 頭放大 + 臉」,不改骨架。
+   ★ 四肢**沿用 createLimb**(它本來就是膠囊=圓的),只把半徑加粗 ⇒ pivot/joint 結構自動保住。
+   ══════════════════════════════════════════════════════════════════════════════ */
+function makeTsumPerson({ shirt = 0x2f6f4e, pants = 0x2a3550, skin = 0xf3cca6, hair = 0x2b2119,
+  gender = "m", scale = 1, blush = false } = {}) {
+  const group = new THREE.Group();
+  const rig = new THREE.Group();
+  group.add(rig);
+  const shirtMat = new THREE.MeshStandardMaterial({ color: shirt, roughness: 0.72 });
+  const pantsMat = new THREE.MeshStandardMaterial({ color: pants, roughness: 0.8 });
+  const skinMat = new THREE.MeshStandardMaterial({ color: skin, roughness: 0.78, emissive: 0x8a7355, emissiveIntensity: 0.5 });
+  const bl = (r, mat, sx = 1, sy = 1, sz = 1, seg = 14) => {
+    const m = new THREE.Mesh(new THREE.SphereGeometry(r, seg, seg), mat);
+    m.scale.set(sx, sy, sz);
+    return m;
+  };
+
+  // 圓團上身(取代方塊 chest);半深 ≈0.19 → 披肩布片(z=0.17)仍貼在身上不浮空
+  const chest = bl(0.30, shirtMat, 1.0, 1.28, 0.64);
+  chest.position.y = 1.42;
+  rig.add(chest);
+  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.1, 0.2, 12), skinMat);
+  neck.position.y = 1.88;
+  rig.add(neck);
+  const waist = new THREE.Group();          // ★ y=1.16 不動
+  waist.position.y = 1.16;
+  waist.add(bl(0.25, shirtMat, 1.0, 0.68, 0.62));                       // 圓肚
+  const hip = bl(gender === "f" ? 0.26 : 0.24, pantsMat, 1.0, 0.5, 0.62);
+  hip.position.y = -0.26;
+  waist.add(hip);
+  const beltLine = new THREE.Mesh(new THREE.TorusGeometry(0.235, 0.028, 6, 18), new THREE.MeshStandardMaterial({ color: 0x5a3d22, roughness: 0.6 }));
+  beltLine.position.y = -0.15;
+  beltLine.rotation.x = Math.PI / 2;        // 腰帶環一圈(圓身就用環,不用方塊條)
+  waist.add(beltLine);
+  rig.add(waist);
+
+  // 頭:tsum 要大(原版 0.25 → 0.32);★ y=2.12 不動
+  const HR = 0.32;
+  const head = new THREE.Mesh(new THREE.SphereGeometry(HR, 18, 18), skinMat);
+  head.position.y = 2.12;
+  rig.add(head);
+  for (const x of [-1, 1]) {                // 小圓耳(貼在放大後的頭側)
+    const ear = bl(0.055, skinMat, 0.5, 1, 0.85, 10);
+    ear.position.set(x * HR * 0.96, 2.11, 0);
+    rig.add(ear);
+  }
+  const hairMat = new THREE.MeshStandardMaterial({ color: hair, roughness: 0.85 });
+  const hairCap = new THREE.Mesh(new THREE.SphereGeometry(HR * 1.06, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.5), hairMat);
+  hairCap.position.y = 2.13;
+  hairCap.rotation.x = -0.2;
+  rig.add(hairCap);
+  const hairBack = new THREE.Mesh(
+    new THREE.SphereGeometry(HR * 1.02, 16, 8, Math.PI, Math.PI, Math.PI * 0.32, Math.PI * (gender === "f" ? 0.42 : 0.26)),
+    hairMat,
+  );
+  hairBack.position.y = 2.12;
+  rig.add(hairBack);
+
+  /* 圓萌臉:大眼 + 水潤雙高光 + 深笑。★ 刻意**沒有眉毛** —— 眉毛是寫實版的表情零件,
+     配大眼會變成生氣臉;tsum 的溫柔靠大眼+深笑。 */
+  const faceDark = new THREE.MeshBasicMaterial({ color: 0x25201a });
+  const faceWhite = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  const front = HR * 0.84, eyeR = 0.085;
+  for (const x of [-1, 1]) {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(eyeR, 12, 12), faceWhite);
+    eye.position.set(x * 0.115, 2.17, front);
+    rig.add(eye);
+    const pupil = new THREE.Mesh(new THREE.SphereGeometry(eyeR * 0.68, 10, 10), faceDark);
+    pupil.position.set(x * 0.115, 2.17, front + eyeR * 0.42);
+    rig.add(pupil);
+    const hi = new THREE.Mesh(new THREE.SphereGeometry(eyeR * 0.3, 8, 8), faceWhite);
+    hi.position.set(x * (0.115 + eyeR * 0.28), 2.17 + eyeR * 0.4, front + eyeR * 0.6);
+    rig.add(hi);
+    const hi2 = new THREE.Mesh(new THREE.SphereGeometry(eyeR * 0.15, 6, 6), faceWhite);
+    hi2.position.set(x * (0.115 - eyeR * 0.3), 2.17 - eyeR * 0.42, front + eyeR * 0.58);
+    rig.add(hi2);
+    if (blush) {                            // ★ 主耶穌一律 false(見檔頭神學界線)
+      const b = bl(0.055, new THREE.MeshStandardMaterial({ color: 0xdf9a92, roughness: 0.9 }), 1, 0.7, 0.45, 8);
+      b.position.set(x * 0.2, 2.09, front * 0.86);
+      rig.add(b);
+    }
+  }
+  const smile = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.016, 8, 14, Math.PI), faceDark);
+  smile.position.set(0, 2.02, front * 0.96);
+  smile.rotation.z = Math.PI;
+  rig.add(smile);
+
+  // 四肢:結構與所有 y 值同原版,只把膠囊加粗(tsum 的短胖手腳)
+  const shoeMat = new THREE.MeshStandardMaterial({ color: 0x2a2622, roughness: 0.85 });
+  const mkArm = (x) => {
+    const arm = createLimb({
+      upperMaterial: shirtMat, lowerMaterial: skinMat, endMaterial: skinMat,
+      upperLen: 0.27, lowerLen: 0.26, upperRadius: 0.095, lowerRadius: 0.078,
+      end: "hand", thumbSide: x < 0 ? 1 : -1,
+    });
+    arm.pivot.position.set(x, 1.72, 0);
+    arm.joint.rotation.x = -0.18;
+    rig.add(arm.pivot);
+    return arm;
+  };
+  const leftArm = mkArm(-0.4);
+  const rightArm = mkArm(0.4);
+  const mkLeg = (x) => {
+    const leg = createLimb({
+      upperMaterial: pantsMat, lowerMaterial: pantsMat, endMaterial: shoeMat,
+      upperLen: 0.40, lowerLen: 0.38, upperRadius: 0.115, lowerRadius: 0.092,
+      end: "foot",
+    });
+    leg.pivot.position.set(x, 1.0, 0);
+    leg.pivot.rotation.x = -0.05;
+    leg.joint.rotation.x = 0.1;
+    rig.add(leg.pivot);
+    return leg;
+  };
+  const leftLeg = mkLeg(-0.15);
+  const rightLeg = mkLeg(0.15);
+
+  group.scale.setScalar(scale);
+  return { group, rig, head, waist, leftArm, rightArm, leftLeg, rightLeg, smile };
+}
+
+/* 騎者畫風三態 → 要不要走圓萌。auto=依年齡分級(幼兒/兒童→圓萌)。
+   ★ 政策白話:小小孩看圓萌的比較不怕、比較親;大孩子與青少年看寫實的比較不幼稚。 */
+function resolveRiderTsum(riderStyle, difficulty) {
+  if (riderStyle === "tsum") return true;
+  if (riderStyle === "real") return false;
+  return difficulty === "kids" || difficulty === "child";   // auto
+}
+
 // ---------- 耶穌(引擎控 NPC:玩家操控的是驢駒,耶穌只是安坐) ----------
 // 白袍+深紅外袍披肩(兩片 Box 從肩垂下)+褐髮+溫柔坐姿。
-function makeJesusRider() {
-  const rider = makePerson({
+function makeJesusRider(tsum = false) {
+  /* 🧸 圓萌版走 makeTsumPerson,接口與所有 y 值一樣 ⇒ 下面的披肩/垂髮座標**兩版共用**。
+     ★★ `blush: false` 是**刻意的神學界線**(使用者在尋羊記親自定的):
+        這位騎者就是主耶穌本人,可愛可以、做成玩偶就過頭 ⇒ 圓萌版也不加腮紅。 */
+  const rider = (tsum ? makeTsumPerson : makePerson)({
     shirt: 0xf2efe6, // 白袍
     pants: 0xf2efe6, // 同色(袍子蓋到腿)
     hair: 0x4a3120, // 褐髮
     gender: "f", // 借長髮版後腦髮(及肩長髮)
     scale: 0.95,
+    blush: false,
   });
   // 兩側垂髮(及肩)
   const hairSideMat = new THREE.MeshStandardMaterial({ color: 0x4a3120, roughness: 0.85 });
@@ -234,19 +380,41 @@ function makeJesusRider() {
   }
   // 深紅外袍披肩:兩片布從肩前垂下+後背一片,溫柔莊重
   const mantleMat = new THREE.MeshStandardMaterial({ color: 0x7a2a22, roughness: 0.85, side: THREE.DoubleSide });
-  for (const x of [-0.19, 0.19]) {
-    const strip = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.86, 0.05), mantleMat);
-    strip.position.set(x, 1.4, 0.17);
-    strip.rotation.x = -0.08;
-    rider.rig.add(strip);
+  if (tsum) {
+    /* 🔴 圓萌版的披肩**不能照抄寫實版的方塊布片**(0730 截圖驗收抓到):
+       那四片(前兩片 + 後背一片 + 肩環)是為**方塊胸膛**(0.56 寬 × 0.32 深)調的座標,
+       套在圓團身上會沿著圓身外緣圍成一圈平板 ⇒ 畫面上是**一個紅色相框**,不是披在身上的布。
+       圓身要用圓的:肩上一圈環 + 背後一片壓扁的球 + 兩側兩塊小圓垂布,才會讀成「披著」。
+       ★ 同一條通則(tsum-3d-kit §配件鐵則②):**配件不可照抄方塊身時代的絕對座標。** */
+    const collar = new THREE.Mesh(new THREE.TorusGeometry(0.26, 0.058, 8, 20), mantleMat);
+    collar.position.y = 1.73;
+    collar.rotation.x = Math.PI / 2;
+    rider.rig.add(collar);
+    const back = new THREE.Mesh(new THREE.SphereGeometry(0.29, 16, 14), mantleMat);
+    back.scale.set(1.0, 1.18, 0.42);
+    back.position.set(0, 1.40, -0.14);
+    rider.rig.add(back);
+    for (const x of [-0.2, 0.2]) {
+      const drape = new THREE.Mesh(new THREE.SphereGeometry(0.115, 12, 12), mantleMat);
+      drape.scale.set(0.85, 1.9, 0.55);
+      drape.position.set(x, 1.38, 0.1);
+      rider.rig.add(drape);
+    }
+  } else {
+    for (const x of [-0.19, 0.19]) {
+      const strip = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.86, 0.05), mantleMat);
+      strip.position.set(x, 1.4, 0.17);
+      strip.rotation.x = -0.08;
+      rider.rig.add(strip);
+    }
+    const mantleBack = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.8, 0.05), mantleMat);
+    mantleBack.position.set(0, 1.42, -0.19);
+    rider.rig.add(mantleBack);
+    // 肩上披肩環(蓋住肩線,讓前後片連起來)
+    const shoulderWrap = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.16, 0.4), mantleMat);
+    shoulderWrap.position.set(0, 1.76, 0);
+    rider.rig.add(shoulderWrap);
   }
-  const mantleBack = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.8, 0.05), mantleMat);
-  mantleBack.position.set(0, 1.42, -0.19);
-  rider.rig.add(mantleBack);
-  // 肩上披肩環(蓋住肩線,讓前後片連起來)
-  const shoulderWrap = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.16, 0.4), mantleMat);
-  shoulderWrap.position.set(0, 1.76, 0);
-  rider.rig.add(shoulderWrap);
   return rider;
 }
 
@@ -610,6 +778,8 @@ export class DonkeyJourneyGame {
     this.modeId = GAME_MODES[settings.modeId] ? settings.modeId : "standard";
     this.mode = getModeConfig(this.modeId);
     this.coatId = HORSE_COATS[settings.horseCoat] ? settings.horseCoat : "greybrown";
+    // 騎者畫風三態(auto/tsum/real);auto 依年齡分級決定 —— 見 resolveRiderTsum()
+    this.riderStyle = ["auto", "tsum", "real"].includes(settings.riderStyle) ? settings.riderStyle : "auto";
 
     this.input = new InputManager();
     this.input.bindTouchButtons(this.touchRoot);
@@ -820,7 +990,9 @@ export class DonkeyJourneyGame {
        日後要接「年齡分級」(幼兒/兒童=圓萌、青少年=寫實)時就是現成的。 */
     this.horse = (TSUM_MOUNT ? makeDonkeyTsum : makeDonkey)({ coat: coat.coat, mane: coat.mane });
     this.scene.add(this.horse.group);
-    this.rider = makeJesusRider();
+    /* 🧸 騎者畫風:auto 依年齡分級(幼兒/兒童→圓萌),或使用者在選單直接指定。
+       ★ 這裡是**建場時**決定的;在選單改設定會 rebuildRider() 立刻換,不必重開。 */
+    this.rider = makeJesusRider(resolveRiderTsum(this.riderStyle, this.difficulty));
     poseJesusOnDonkey(this.rider);
     this.horse.rig.add(this.rider.group);
 
@@ -955,16 +1127,44 @@ export class DonkeyJourneyGame {
   }
 
   // ---------- 局面控制 ----------
-  applyPresentation({ difficulty, modeId, horseCoat }) {
+  applyPresentation({ difficulty, modeId, horseCoat, riderStyle }) {
     if (difficulty && DIFFICULTY_PRESETS[difficulty]) this.difficulty = difficulty;
     if (modeId && GAME_MODES[modeId]) {
       this.modeId = modeId;
       this.mode = getModeConfig(modeId);
     }
     if (horseCoat && HORSE_COATS[horseCoat]) this.setHorseCoat(horseCoat);
-    saveSettings({ difficulty: this.difficulty, modeId: this.modeId, horseCoat: this.coatId });
+    if (riderStyle && ["auto", "tsum", "real"].includes(riderStyle)) this.riderStyle = riderStyle;
+    /* ★ 難度也要觸發重建:riderStyle=auto 時**畫風是難度決定的**,
+       只在改畫風時重建的話,使用者把難度從「標準」調到「幼兒」騎者不會跟著變圓萌。 */
+    this.rebuildRider();
+    saveSettings({ difficulty: this.difficulty, modeId: this.modeId, horseCoat: this.coatId, riderStyle: this.riderStyle });
     this.message = `${this.mode.label} · ${DIFFICULTY_LABELS[this.difficulty]} · ${HORSE_COATS[this.coatId].label}驢駒 已設定。`;
     this.pushHud();
+  }
+
+  /* 換騎者畫風:騎者是一整個模型,只能**重建**(不像毛色可以改材質色)。
+     ★ 重建後一定要重跑 poseJesusOnDonkey():坐姿是寫在四肢 rotation 上的,
+       新做的騎者是站姿,不重跑就會「站在驢背上」。 */
+  rebuildRider() {
+    if (!this.horse) return;
+    const wantTsum = resolveRiderTsum(this.riderStyle, this.difficulty);
+    if (this.rider) {
+      this.horse.rig.remove(this.rider.group);
+      this.rider.group.traverse((o) => {
+        if (o.geometry) o.geometry.dispose();
+        if (o.material) o.material.dispose();
+      });
+    }
+    this.rider = makeJesusRider(wantTsum);
+    poseJesusOnDonkey(this.rider);
+    this.horse.rig.add(this.rider.group);
+  }
+
+  setRiderStyle(style) {
+    if (!["auto", "tsum", "real"].includes(style)) return;
+    this.riderStyle = style;
+    this.rebuildRider();
   }
 
   // 換毛色:全身共用 coatMat/maneMat,改材質色即可(不重建驢駒)

@@ -5,6 +5,9 @@ const defaultSettings = {
   difficulty: "normal",
   modeId: "standard",
   horseCoat: "greybrown",
+  /* 騎者畫風(0730 使用者點名):auto=依年齡分級(幼兒/兒童→圓萌,其餘→寫實)/ tsum / real。
+     ★ 全艦隊政策是「動物一律 tsum、**人物按年齡分級**」,所以人物給的是三態而不是開關。 */
+  riderStyle: "auto",
   audioEnabled: true,
 };
 
